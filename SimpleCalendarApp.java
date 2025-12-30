@@ -56,7 +56,16 @@ public class SimpleCalendarApp {
                 case "1":
                     addEventOnCLI(manager, scanner, formatter);
                     break;
-
+                case "2":
+                    checkDayCLI(manager, scanner, true);
+                    break;
+                case "3":
+                    break;
+                case "4":
+                    checkDayCLI(manager, scanner, false);
+                    break;
+                case "5":
+                    break;   
                 case "6":
                     running = false;
                     break;
@@ -81,7 +90,7 @@ public class SimpleCalendarApp {
         //Loop for Title
         while (true) {
             System.out.println("Enter event title (blank to cancel): ");
-            System.out.println("Please note \",\" will be replaced with \"-\"");
+            System.out.println("Please note \",\" will be replaced with \"-\"\n");
 
             //We can just use title here since its also a string
             title = scanner.nextLine().trim();
@@ -99,7 +108,7 @@ public class SimpleCalendarApp {
         //Loop for Start Time
         while (true) {
             System.out.println("Enter start time (blank to cancel): ");
-            System.out.println("Please note the format is: yyyy-MM-dd HH:mm");
+            System.out.println("Please note the format is: yyyy-MM-dd HH:mm\n");
 
             String input = scanner.nextLine().trim();
 
@@ -119,7 +128,7 @@ public class SimpleCalendarApp {
         //Loop for End Time
         while (true) {
             System.out.println("Enter end time (blank to cancel): ");
-            System.out.println("Please note the format is: yyyy-MM-dd HH:mm");
+            System.out.println("Please note the format is: yyyy-MM-dd HH:mm\n");
 
             String input = scanner.nextLine().trim();
 
@@ -146,6 +155,60 @@ public class SimpleCalendarApp {
             System.out.println("Event added successfully.");
         } catch (IllegalArgumentException e) {
             System.out.println("Failed to add event: " + e.getMessage());
+        }
+
+    }
+
+    private static void checkDayCLI(AppointmentManager manager, Scanner scanner, boolean isToday) {
+        
+        //Since we need something for all of today's events just use this to skip all the inputting
+        if (isToday) {
+            var events = manager.listADaysEvents(LocalDate.now());
+
+            if (events.isEmpty()) {
+                    System.out.println("No events today.");
+                } else {
+                    System.out.println("Here are today's events:");
+                    for (Event event : events) {
+                        System.out.println(" - " + event.getTitle()
+                                            + " " + event.getStartTime()
+                                            + "-" + event.getEndTime());
+                    }
+                    return;
+                }
+
+        }
+
+        //Loop for the day they need to choose now
+        while (true) {
+            System.out.println("Enter end time (blank to cancel): ");
+            System.out.println("Please note the format is: yyyy-MM-dd\n");
+
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println("Cancelling...");
+                return;                
+            }
+
+            try {
+                LocalDate date = LocalDate.parse(input, DateTimeFormatter.ISO_LOCAL_DATE);
+                var events = manager.listADaysEvents(date);
+
+                if (events.isEmpty()) {
+                    System.out.println("No events on " + date);
+                } else {
+                    System.out.println("Events on " + date + ":");
+                    for (Event event : events) {
+                        System.out.println(" - " + event.getTitle()
+                                            + " " + event.getStartTime()
+                                            + "-" + event.getEndTime());
+                    }
+                    return;
+                }
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Try again.");
+            }
         }
 
     }
