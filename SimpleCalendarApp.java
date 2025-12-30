@@ -9,14 +9,13 @@
  * 
  * Current Issues:
  * ==============
- * - Validatation of Events
- * - Inserting events into the Calendar
+ * - Provide the next available slot of a specified size for today OR the specified day.
  * - Actually setting up this main file
  * - Presentation
  * 
  * Stretch Goals:
  * ==============
- * 1) Test cases
+ * 1) Test cases (Semi Done)
  * 2) Persistance across opening and closing the program
  * 3) GUI
  *

@@ -177,13 +177,13 @@ public class AppointmentManager {
 
         //Cut the events to be only what is currently possible
         if (aDay.isEqual(LocalDate.now())) {
-            eventsToCheck= listTodaysRemainingEvents();
+            eventsToCheck = listTodaysRemainingEvents();
             isToday = true;
         } else {
             eventsToCheck = listADaysEvents(aDay);
         }
 
-        
+        //First sanity check if the day to check is empty if so we can add it whenever
         if (eventsToCheck.isEmpty()) {
             //This could be an &&, but I also wanted to make it so that we avoid the main algo if a future day is empty
             if (isToday) {
@@ -202,7 +202,14 @@ public class AppointmentManager {
         */
 
         for (Event event : eventsToCheck) {
-            //TODO: finish the logic in here
+            //If the end is before the next event's start we are done
+            if (result[0].plus(howLong).isBefore(event.getStartTime())) {
+                return Optional.of(result);
+            }
+
+            //Move result to right after the last checked event
+            result[0] = event.getEndTime().plusSeconds(1);
+            result[1] = result[0].plus(howLong);
         }
 
         
