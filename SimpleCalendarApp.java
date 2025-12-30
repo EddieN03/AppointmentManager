@@ -15,7 +15,7 @@
  * Stretch Goals:
  * ==============
  * 1) Test cases (Semi Done)
- * 3) GUI
+ * 2) GUI
  *
  */
 
@@ -66,6 +66,7 @@ public class SimpleCalendarApp {
                     checkDayCLI(manager, scanner, false);
                     break;
                 case "5":
+                    findNextSlotCLI(manager, scanner);
                     break;   
                 case "6":
                     running = false;
@@ -83,6 +84,9 @@ public class SimpleCalendarApp {
 
     //Helper Functions
 
+    /*
+     * This function allows the User to create an event for their calendar.
+     */
     private static void addEventOnCLI(AppointmentManager manager, Scanner scanner, DateTimeFormatter formatter) {
         String title;
         LocalDateTime start;
@@ -90,8 +94,8 @@ public class SimpleCalendarApp {
 
         //Loop for Title
         while (true) {
+            System.out.println("Please note \",\" will be replaced with \"-\"");
             System.out.println("Enter event title (blank to cancel): ");
-            System.out.println("Please note \",\" will be replaced with \"-\"\n");
 
             //We can just use title here since its also a string
             title = scanner.nextLine().trim();
@@ -108,8 +112,8 @@ public class SimpleCalendarApp {
 
         //Loop for Start Time
         while (true) {
+            System.out.println("Please note the format is: yyyy-MM-dd HH:mm");
             System.out.println("Enter start time (blank to cancel): ");
-            System.out.println("Please note the format is: yyyy-MM-dd HH:mm\n");
 
             String input = scanner.nextLine().trim();
 
@@ -128,8 +132,8 @@ public class SimpleCalendarApp {
 
         //Loop for End Time
         while (true) {
+            System.out.println("Please note the format is: yyyy-MM-dd HH:mm");
             System.out.println("Enter end time (blank to cancel): ");
-            System.out.println("Please note the format is: yyyy-MM-dd HH:mm\n");
 
             String input = scanner.nextLine().trim();
 
@@ -160,6 +164,10 @@ public class SimpleCalendarApp {
 
     }
 
+    /*
+     * This function connects the CLI to listADaysEvents to get the events of either
+     * today or any day the user chooses. It's used in both option 2 and 4.
+     */
     private static void checkDayCLI(AppointmentManager manager, Scanner scanner, boolean isToday) {
         
         //Since we need something for all of today's events just use this to skip all the inputting
@@ -182,8 +190,9 @@ public class SimpleCalendarApp {
 
         //Loop for the day they need to choose now
         while (true) {
-            System.out.println("Enter end time (blank to cancel): ");
-            System.out.println("Please note the format is: yyyy-MM-dd\n");
+            System.out.println("Please note the format is: yyyy-MM-dd");
+            System.out.println("Enter the day (blank to cancel): ");
+            
 
             String input = scanner.nextLine().trim();
 
@@ -214,22 +223,96 @@ public class SimpleCalendarApp {
 
     }
 
+    /*
+     * This function connects the CLI to be able to find all remaining events
+     * left for today.
+     */
     private static void checkRemainingCLI(AppointmentManager manager) {
+
         NavigableSet<Event> remaining = manager.listTodaysRemainingEvents();
+        
         if (remaining.isEmpty()) {
+
             System.out.println("There are no remaining events for today.");
+        
         } else {
+        
             System.out.println("Here are today's remaining events:");
+
                     for (Event event : remaining) {
                         System.out.println(" - " + event.getTitle()
                                             + " " + event.getStartTime()
                                             + "-" + event.getEndTime());
                     }
+        
         }
+
     }
-    
 
+    /*
+     * This functions connects the CLI to be able to find the next available time slot
+     * for an event.
+     */
+    private static void findNextSlotCLI(AppointmentManager manager, Scanner scanner) {
 
-    
-      
+        LocalDate day;
+        Duration duration;
+
+        //Loop to get the date
+        while (true) {
+            System.out.println("Please note the format is: yyyy-MM-dd");
+            System.out.println("Enter the day (blank to cancel): ");
+
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println("Cancelling...");
+                return;                
+            }
+
+            try {
+                day = LocalDate.parse(input, DateTimeFormatter.ISO_LOCAL_DATE);
+                break;
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Try again.");
+            }
+        }
+
+        //Loop to get the duration
+        while (true) {
+            System.out.println("Enter the duration in minutes (as a number): ");
+
+            String input = scanner.nextLine().trim();
+
+            try {
+
+                long minutes = Long.parseLong(input);
+
+                //Prevent a fake number
+                if (minutes <= 0) {
+                    System.out.println("Duration must be positive.");
+                    continue;
+                }
+
+                duration = Duration.ofMinutes(minutes);
+                break;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number. Try again.");
+            }
+        }
+
+        //Now that we have every, time to look for the timeslot
+        var slot = manager.findNextAvailableSlot(day, duration);
+
+        //Tell the user if there was a slot or not
+        if (slot.isPresent()) {
+            LocalTime[] timeSlot = slot.get();
+            System.out.println("The next available slot on " + day + ": " + timeSlot[0] + " to " + timeSlot[1]);            
+        } else {
+            System.out.println("There was no available slot of that duration on " + day);
+        }
+
+    }
+
 }
