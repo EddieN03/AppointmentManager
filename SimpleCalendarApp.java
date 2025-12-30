@@ -9,7 +9,6 @@
  * 
  * Current Issues:
  * ==============
- * - Persistance across opening and closing the program
  * - Actually setting up this main file
  * - Presentation
  * 

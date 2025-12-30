@@ -11,24 +11,12 @@
 import java.util.*;
 import java.util.stream.Collectors;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.io.*;
 
 public class AppointmentManager {
 
-    /*
-     * This is a small helper object used for event validation
-     */
-    private static class TempEvent {
-        final LocalDate date;
-        final LocalTime start;
-        final LocalTime end;
-
-        TempEvent(LocalDate date, LocalTime start, LocalTime end) {
-            this.date = date;
-            this.start = start;
-            this.end = end;
-        }
-    
-    }
+    //Instance Variable & Constructor
 
     private final Map<LocalDate, NavigableSet<Event>> eventsEachDay;
 
@@ -36,108 +24,7 @@ public class AppointmentManager {
         this.eventsEachDay = new HashMap<>();
     }
 
-    /*
-     * This fucntion is the main driver for adding events to the calendar.
-     * It utilizes various helper functions as well as the TempEvent object
-     */
-    public void addEvent(String title, LocalDateTime start, LocalDateTime end) {
-
-        //Error handling
-        if (end.isBefore(start)) {
-            throw new IllegalArgumentException("Start must be before end");
-        }
-
-        //Do the splitting in a helper function
-        List<TempEvent> segments = buildSegments(start, end);
-
-        //Check if all the split events are legal to include
-        validateSegments(segments);
-
-        //Commit all parts of an event at once
-        for (TempEvent event : segments) {
-
-            //If there wasn't any events on that day just start that section with
-            //computeIfAbsent
-            NavigableSet<Event> eventsOfTheDay = eventsEachDay.computeIfAbsent(event.date, d -> new TreeSet<>());
-            
-            //Then add it to whatever we just got
-            eventsOfTheDay.add(new Event(title, event.start, event.end));
-        }
-
-    }
-
-    /*
-     * Helper fucntion to split an event across multiple days if needed
-     */
-    private List<TempEvent> buildSegments(LocalDateTime start, LocalDateTime end) {
-
-        List<TempEvent> result = new ArrayList<>();
-
-        //Logic for splitting the days
-        LocalDate currentDate = start.toLocalDate();
-        LocalDate lastDate = end.toLocalDate();
-
-        //Use NOT isAfter instead of isBefore to include the end of the event
-        while (!currentDate.isAfter(lastDate)) {
-
-            LocalTime currentStart;
-            LocalTime currentEnd;
-
-            //Check to see if the current day matches with the start
-            //If so set it to the proper time
-            //Otherwise set it to midnight
-            if (currentDate.isEqual(start.toLocalDate())) {
-                currentStart = start.toLocalTime();
-            } else {
-                currentStart = LocalTime.MIDNIGHT;
-            }
-
-            //Check to see if the current day matches with the end
-            //If so set it to the proper time
-            //Otherwise set it to 23:59:99
-            if (currentDate.isEqual(end.toLocalDate())) {
-                currentEnd = end.toLocalTime();
-            } else {
-                currentEnd = LocalTime.MAX;
-            }
-
-            //Insert the new temp event into the temp array and increment the day
-            result.add(new TempEvent(currentDate, currentStart, currentEnd));
-
-            currentDate = currentDate.plusDays(1);
-        }
-
-        return result;
-
-    }
-
-    /*
-     * Another helper function, this time to validate all the events
-     * on the arraylist to see if they don't overlap with current events
-     */
-    private void validateSegments(List<TempEvent> segments) {
-
-        for (TempEvent event : segments) {
-
-            NavigableSet<Event> eventsOfTheDay = listADaysEvents(event.date);
-
-            Event probe = new Event("probe", event.start, event.end);
-
-            Event lowerEvent = eventsOfTheDay.lower(probe);
-            Event higherEvent = eventsOfTheDay.higher(probe);
-
-
-            //Check events of that day and see if probe fits, if not throw error
-            if ((lowerEvent != null && lowerEvent.overlaps(probe)) || 
-                (higherEvent != null && probe.overlaps(higherEvent))) {
-
-                    throw new IllegalArgumentException("Event overlaps on " + event.date);
-                
-            }
-
-        }
-
-    }
+    //Core Requirements
 
     /*
      * Get a COPY of the events of a given day without checking if the time has passed for said events
@@ -230,6 +117,209 @@ public class AppointmentManager {
         }
         
         return Optional.empty();
+    }
+
+    //Remaining Public API Methods
+
+    /*
+     * This function is the main driver for adding events to the calendar.
+     * It utilizes various helper functions as well as the TempEvent object
+     */
+    public void addEvent(String title, LocalDateTime start, LocalDateTime end) {
+
+        //Error handling
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("Start must be before end");
+        }
+
+        //Do the splitting in a helper function
+        List<TempEvent> segments = buildSegments(start, end);
+
+        //Check if all the split events are legal to include
+        validateSegments(segments);
+
+        //Commit all parts of an event at once
+        for (TempEvent event : segments) {
+
+            //If there wasn't any events on that day just start that section with
+            //computeIfAbsent
+            NavigableSet<Event> eventsOfTheDay = eventsEachDay.computeIfAbsent(event.date, d -> new TreeSet<>());
+            
+            //Then add it to whatever we just got
+            eventsOfTheDay.add(new Event(title, event.start, event.end));
+        }
+
+    }
+
+    //Persistence Functionality
+
+    /*
+     * This function saves all the events on the calendar.
+     */
+    public void saveToCSV(String filename) {
+
+        //Get the formatting set up for the file
+        DateTimeFormatter dateFormat = DateTimeFormatter.ISO_LOCAL_DATE;
+        DateTimeFormatter timeFormat = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        //Check if the file name is valid
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            //If so then for every day there are events we write then one by one into the file
+            for (var entry : eventsEachDay.entrySet()) {
+
+                LocalDate date = entry.getKey();
+
+                for (Event event : entry.getValue()) {
+
+                    String line = String.join(",",
+                                                date.format(dateFormat),
+                                                event.getTitle(),
+                                                event.getStartTime().format(timeFormat),
+                                                event.getEndTime().format(timeFormat));
+                    writer.write(line);
+                    writer.newLine();
+
+                }
+                
+            }
+        } catch (IOException e) {
+            //This shouldn't happen since the code will start with events.csv, but just in case
+            e.printStackTrace();
+        }
+    }
+
+    /*
+     * This function loads all the events onto the calendar.
+     */
+    public void loadFromCSV(String filename) {
+
+        //Get the formatting set up for the file
+        DateTimeFormatter dateFormat = DateTimeFormatter.ISO_LOCAL_DATE;
+        DateTimeFormatter timeFormat = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        File file = new File(filename);
+        if (!file.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+
+            //As long as something exists on the line, get it and put it into the calendar
+            String line;
+            while ((line = reader.readLine()) != null) {
+
+                //If there somehow is a misalignment skip it
+                String[] parts = line.split(",", 4);
+                if (parts.length != 4) continue;
+
+                //Parse the split, then add the event to the correct date
+                LocalDate date = LocalDate.parse(parts[0], dateFormat);
+                String title = parts[1];
+                LocalTime start = LocalTime.parse(parts[2], timeFormat);
+                LocalTime end = LocalTime.parse(parts[2], timeFormat);
+
+                NavigableSet<Event> eventsOfTheDay = eventsEachDay.computeIfAbsent(date, d -> new TreeSet<>());
+                eventsOfTheDay.add(new Event(title, start, end));
+
+            }
+
+        } catch (IOException e) {
+            //This shouldn't happen since the code will start with events.csv, but just in case
+            e.printStackTrace();
+        }
+
+    }
+
+
+    //Helper Functions
+
+    /*
+     * Helper fucntion to split an event across multiple days if needed
+     */
+    private List<TempEvent> buildSegments(LocalDateTime start, LocalDateTime end) {
+
+        List<TempEvent> result = new ArrayList<>();
+
+        //Logic for splitting the days
+        LocalDate currentDate = start.toLocalDate();
+        LocalDate lastDate = end.toLocalDate();
+
+        //Use NOT isAfter instead of isBefore to include the end of the event
+        while (!currentDate.isAfter(lastDate)) {
+
+            LocalTime currentStart;
+            LocalTime currentEnd;
+
+            //Check to see if the current day matches with the start
+            //If so set it to the proper time
+            //Otherwise set it to midnight
+            if (currentDate.isEqual(start.toLocalDate())) {
+                currentStart = start.toLocalTime();
+            } else {
+                currentStart = LocalTime.MIDNIGHT;
+            }
+
+            //Check to see if the current day matches with the end
+            //If so set it to the proper time
+            //Otherwise set it to 23:59:99
+            if (currentDate.isEqual(end.toLocalDate())) {
+                currentEnd = end.toLocalTime();
+            } else {
+                currentEnd = LocalTime.MAX;
+            }
+
+            //Insert the new temp event into the temp array and increment the day
+            result.add(new TempEvent(currentDate, currentStart, currentEnd));
+
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return result;
+
+    }
+
+    /*
+     * Another helper function, this time to validate all the events
+     * on the arraylist to see if they don't overlap with current events
+     */
+    private void validateSegments(List<TempEvent> segments) {
+
+        for (TempEvent event : segments) {
+
+            NavigableSet<Event> eventsOfTheDay = listADaysEvents(event.date);
+
+            Event probe = new Event("probe", event.start, event.end);
+
+            Event lowerEvent = eventsOfTheDay.lower(probe);
+            Event higherEvent = eventsOfTheDay.higher(probe);
+
+
+            //Check events of that day and see if probe fits, if not throw error
+            if ((lowerEvent != null && lowerEvent.overlaps(probe)) || 
+                (higherEvent != null && probe.overlaps(higherEvent))) {
+
+                    throw new IllegalArgumentException("Event overlaps on " + event.date);
+                
+            }
+
+        }
+
+    }
+
+    //Inner Class
+
+    /*
+     * This is a small helper object used for event validation
+     */
+    private static class TempEvent {
+        final LocalDate date;
+        final LocalTime start;
+        final LocalTime end;
+
+        TempEvent(LocalDate date, LocalTime start, LocalTime end) {
+            this.date = date;
+            this.start = start;
+            this.end = end;
+        }
+    
     }
     
 }
