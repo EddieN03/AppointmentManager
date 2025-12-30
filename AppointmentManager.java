@@ -166,13 +166,18 @@ public class AppointmentManager {
             //If so then for every day there are events we write then one by one into the file
             for (var entry : eventsEachDay.entrySet()) {
 
+                LocalDate date = entry.getKey();
 
                 for (Event event : entry.getValue()) {
 
+                    LocalDateTime startDateTime = date.atTime(event.getStartTime());
+                    LocalDateTime endDateTime = date.atTime(event.getEndTime());
+
+
                     String line = String.join(",",
                                                 event.getTitle(),
-                                                event.getStartTime().format(formatter),
-                                                event.getEndTime().format(formatter));
+                                                startDateTime.format(formatter),
+                                                endDateTime.format(formatter));
                     writer.write(line);
                     writer.newLine();
 
