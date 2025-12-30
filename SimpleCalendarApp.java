@@ -20,68 +20,138 @@
  */
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.NavigableSet;
-
+import java.util.Scanner;
 
 public class SimpleCalendarApp {
 
-    //TODO: All of this
+    private static final String CSV_FILE = "events.csv";
+
     public static void main(String[] args) {
 
         AppointmentManager manager = new AppointmentManager();
+        manager.loadFromCSV(CSV_FILE);
 
-        //TODO: THIS IS ALL TEMP, move to a JUnit Test File at some point
+        Scanner scanner = new Scanner(System.in);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        // Test Case 1: Add a single-day event
-        LocalDateTime start1 = LocalDateTime.of(2025, 12, 31, 10, 0);
-        LocalDateTime end1   = LocalDateTime.of(2025, 12, 31, 11, 0);
+        System.out.println("Welcome to the Simple Calendar App!");
+        boolean running = true;
 
-        manager.addEvent("Meeting", start1, end1);
-        System.out.println("Added single-day event: Meeting");
+        while (running) {
+            
+            System.out.println("\nSelect an option:");
+            System.out.println("\n1) Add an event:");
+            System.out.println("\n2) List ALL events for today:");
+            System.out.println("\n3) List all REMAINING events for today:");
+            System.out.println("\n4) List ALL events for ANY day:");
+            System.out.println("\n5) Find the next available slot of a given size on any day:");
+            System.out.println("\n6) Save and Exit");
 
-        // List events for Dec 31
-        NavigableSet<Event> dec31Events = manager.listADaysEvents(LocalDate.of(2025, 12, 31));
-        System.out.println("Events on 2025-12-31:");
-        dec31Events.forEach(e -> System.out.println(e.getTitle() + " " + e.getStartTime() + "-" + e.getEndTime()));
+            String choice = scanner.nextLine().trim();
 
-        // Test Case 2: Add multi-day event
-        LocalDateTime start2 = LocalDateTime.of(2025, 12, 31, 22, 0);
-        LocalDateTime end2   = LocalDateTime.of(2026, 1, 1, 2, 0);
+            switch (choice) {
+                case "1":
+                    addEventOnCLI(manager, scanner, formatter);
+                    break;
 
-        manager.addEvent("Overnight", start2, end2);
-        System.out.println("\nAdded multi-day event: Overnight");
+                case "6":
+                    running = false;
+                    break;
+                default:
+                    System.out.println("Invalid option, try again");;
+            }
+        }
 
-        // List events for Dec 31
-        System.out.println("Events on 2025-12-31 after Overnight:");
-        dec31Events = manager.listADaysEvents(LocalDate.of(2025, 12, 31));
-        dec31Events.forEach(e -> System.out.println(e.getTitle() + " " + e.getStartTime() + "-" + e.getEndTime()));
+        manager.saveToCSV(CSV_FILE);
+        System.out.println("Events saved. Goodbye!");
+        scanner.close();
+        
+    }
 
-        // List events for Jan 1
-        NavigableSet<Event> jan1Events = manager.listADaysEvents(LocalDate.of(2026, 1, 1));
-        System.out.println("Events on 2026-01-01:");
-        jan1Events.forEach(e -> System.out.println(e.getTitle() + " " + e.getStartTime() + "-" + e.getEndTime()));
+    //Helper Functions
 
-        // Test Case 3: Attempt overlapping event
-        LocalDateTime start3 = LocalDateTime.of(2025, 12, 31, 10, 30);
-        LocalDateTime end3   = LocalDateTime.of(2025, 12, 31, 11, 30);
+    private static void addEventOnCLI(AppointmentManager manager, Scanner scanner, DateTimeFormatter formatter) {
+        String title;
+        LocalDateTime start;
+        LocalDateTime end;
 
+        //Loop for Title
+        while (true) {
+            System.out.println("Enter event title (blank to cancel): ");
+            System.out.println("Please note \",\" will be replaced with \"-\"");
+
+            //We can just use title here since its also a string
+            title = scanner.nextLine().trim();
+
+            if (title.isEmpty()) {
+                System.out.println("Cancelling...");
+                return;
+            }
+
+            //Change commas to dashes since comma is for the CSV
+            title = title.replace(",", "-");
+            break;
+        }
+
+        //Loop for Start Time
+        while (true) {
+            System.out.println("Enter start time (blank to cancel): ");
+            System.out.println("Please note the format is: yyyy-MM-dd HH:mm");
+
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println("Cancelling...");
+                return;
+            }
+
+            try {
+                start = LocalDateTime.parse(input, formatter);
+                break;
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid format. Try again.");
+            }
+        }
+
+        //Loop for End Time
+        while (true) {
+            System.out.println("Enter end time (blank to cancel): ");
+            System.out.println("Please note the format is: yyyy-MM-dd HH:mm");
+
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println("Cancelling...");
+                return;
+            }
+
+            try {
+                end = LocalDateTime.parse(input, formatter);
+                if (end.isBefore(start)) {
+                    System.out.println("End must be after start.");
+                    continue;
+                }
+                break;
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid format. Try again.");
+            }
+        }
+
+        //Finally commit the valid event
         try {
-            manager.addEvent("OverlapTest", start3, end3);
-            System.out.println("ERROR: Overlapping event was added!");
-        } catch (IllegalArgumentException ex) {
-            System.out.println("\nCorrectly caught overlap: " + ex.getMessage());
+            manager.addEvent(title, start, end);
+            System.out.println("Event added successfully.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Failed to add event: " + e.getMessage());
         }
-
-        // Test Case 4: List remaining events for today
-        NavigableSet<Event> remaining = manager.listTodaysRemainingEvents();
-        System.out.println("\nRemaining events for today (" + LocalDate.now() + "):");
-        if (remaining.isEmpty()) {
-            System.out.println("No remaining events.");
-        } else {
-            remaining.forEach(e -> System.out.println(e.getTitle() + " " + e.getStartTime() + "-" + e.getEndTime()));
-        }
-
 
     }
+    
+
+
+    
       
 }
