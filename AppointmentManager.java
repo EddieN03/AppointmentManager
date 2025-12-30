@@ -190,6 +190,11 @@ public class AppointmentManager {
                 result[0] = LocalTime.now();
                 result[1] = LocalTime.now().plus(howLong);
             }
+
+            //Check in both cases if the duration is too long, if so return nothing
+            if (result[1].isAfter(LocalTime.MAX)) {
+                return Optional.empty();
+            }
             return Optional.of(result);
         }
 
@@ -204,14 +209,25 @@ public class AppointmentManager {
         for (Event event : eventsToCheck) {
             //If the end is before the next event's start we are done
             if (result[0].plus(howLong).isBefore(event.getStartTime())) {
+
+                //Another overcap check here
+                if (result[0].plus(howLong).isAfter(LocalTime.MAX)) {
+                    return Optional.empty();
+                }
+
                 return Optional.of(result);
             }
 
-            //Move result to right after the last checked event
-            result[0] = event.getEndTime().plusSeconds(1);
+            //Move result to 1 minute after the last checked event since the edges can't overlap 
+            result[0] = event.getEndTime().plusMinutes(1);
             result[1] = result[0].plus(howLong);
-        }
 
+            //Last and final overcap check
+            if (result[1].isAfter(LocalTime.MAX)) {
+                return Optional.empty();
+            }
+
+        }
         
         return Optional.empty();
     }
