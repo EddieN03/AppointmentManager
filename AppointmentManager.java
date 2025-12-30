@@ -2,13 +2,14 @@
  * Structure:
  * =========
  * Key = Dates
- * Value = ArrayList of Events of the Day
+ * Value = TreeSet of Events of the Day
  * Events should NOT overlap
  * 
  */
 
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.time.*;
 
 public class AppointmentManager {
@@ -29,7 +30,7 @@ public class AppointmentManager {
     
     }
 
-    private final Map<LocalDate, List<Event>> eventsEachDay;
+    private final Map<LocalDate, NavigableSet<Event>> eventsEachDay;
 
     public AppointmentManager() {
         this.eventsEachDay = new HashMap<>();
@@ -52,10 +53,17 @@ public class AppointmentManager {
         //Check if all the split events are legal to include
         validateSegments(segments);
 
-        //TODO: Commit them all at once
+        //Commit all parts of an event at once
         for (TempEvent event : segments) {
+
+            //If there wasn't any events on that day just start that section with
+            //computeIfAbsent
+            NavigableSet<Event> eventsOfTheDay = eventsEachDay.computeIfAbsent(event.date, d -> new TreeSet<>());
             
+            //Then add it to whatever we just got
+            eventsOfTheDay.add(new Event(title, event.start, event.end));
         }
+
     }
 
     /*
@@ -110,34 +118,50 @@ public class AppointmentManager {
     private void validateSegments(List<TempEvent> segments) {
 
         for (TempEvent event : segments) {
-            List<Event> eventsOfTheDay = listADaysEvents(event.date);
+
+            NavigableSet<Event> eventsOfTheDay = listADaysEvents(event.date);
 
             Event probe = new Event("probe", event.start, event.end);
 
-            //TODO: Check events of that day and see if probe fits, if not throw error
+            Event lowerEvent = eventsOfTheDay.lower(probe);
+            Event higherEvent = eventsOfTheDay.higher(probe);
+
+
+            //Check events of that day and see if probe fits, if not throw error
+            if ((lowerEvent != null && lowerEvent.overlaps(probe)) || 
+                (higherEvent != null && probe.overlaps(higherEvent))) {
+
+                    throw new IllegalArgumentException("Event overlaps on " + event.date);
+                
+            }
+
         }
 
     }
 
     /*
-     * Get the events of a given day without checking if the time has passed for said events
+     * Get a COPY of the events of a given day without checking if the time has passed for said events
      * 1) Listing all events for the day -> Since today is also a day
      * 3) List all events for any specified day
      */
-    public List<Event> listADaysEvents(LocalDate aDay) {
-        //Using default of empty set to avoid null
-        return eventsEachDay.getOrDefault(aDay, List.of());
+    public NavigableSet<Event> listADaysEvents(LocalDate aDay) {
+        //Using default of empty list to avoid null
+        return new TreeSet<>(eventsEachDay.getOrDefault(aDay, new TreeSet<>()));
     }
 
     /*
      * 2) List all remaining events for the day
      */
-    public List<Event> listTodaysRemainingEvents() {
+    public NavigableSet<Event> listTodaysRemainingEvents() {
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
 
         //Have to convert to a stream in order to use the filter where endTime is after the current time
-        return eventsEachDay.get(today).stream().filter(e -> e.getEndTime().isAfter(now)).toList();
+        //Just like listADaysEvents also have a default to empty list
+        return eventsEachDay.getOrDefault(today, new TreeSet<>())
+                            .stream()
+                            .filter(e -> e.getEndTime().isAfter(now))
+                            .collect(Collectors.toCollection(TreeSet::new));
     }
 
     /*
@@ -146,7 +170,7 @@ public class AppointmentManager {
     public Optional<LocalTime[]> findNextAvailableSlot(LocalDate aDay, Duration howLong) {
 
         //Variables for the function
-        List<Event> eventsToCheck;
+        NavigableSet<Event> eventsToCheck;
         boolean isToday = false;
         //Predefine If there are no events & not today, just suggest midnight + duration (as this is the first possible time)
         LocalTime[] result = {LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plus(howLong)};

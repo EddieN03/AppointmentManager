@@ -11,7 +11,6 @@
  * ==============
  * - Validatation of Events
  * - Inserting events into the Calendar
- * - Sorting events into chronological order rather than whatever gets added first
  * - Actually setting up this main file
  * - Presentation
  * 

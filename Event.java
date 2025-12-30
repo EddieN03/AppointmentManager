@@ -10,7 +10,7 @@
 
 import java.time.LocalTime;
 
-public class Event {
+public class Event implements Comparable<Event>{
 
     private final String title;
     private final LocalTime startTime;
@@ -45,6 +45,14 @@ public class Event {
     //Actual helper fucntion to determine if a collision exists between events
     public boolean overlaps(Event other) {
         return (this.startTime.isBefore(other.endTime) && this.endTime.isAfter(other.startTime));
+    }
+
+    //Since I'm changing from an ArrayList to a TreeSet for optimization,
+    //we now need this compareTo function
+    @Override
+    public int compareTo(Event other) {
+        int cmp = this.startTime.compareTo(other.startTime);
+        return (cmp != 0) ? cmp : this.endTime.compareTo(other.endTime);
     }
     
 }
