@@ -159,23 +159,20 @@ public class AppointmentManager {
     public void saveToCSV(String filename) {
 
         //Get the formatting set up for the file
-        DateTimeFormatter dateFormat = DateTimeFormatter.ISO_LOCAL_DATE;
-        DateTimeFormatter timeFormat = DateTimeFormatter.ISO_LOCAL_DATE;
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
         //Check if the file name is valid
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
             //If so then for every day there are events we write then one by one into the file
             for (var entry : eventsEachDay.entrySet()) {
 
-                LocalDate date = entry.getKey();
 
                 for (Event event : entry.getValue()) {
 
                     String line = String.join(",",
-                                                date.format(dateFormat),
                                                 event.getTitle(),
-                                                event.getStartTime().format(timeFormat),
-                                                event.getEndTime().format(timeFormat));
+                                                event.getStartTime().format(formatter),
+                                                event.getEndTime().format(formatter));
                     writer.write(line);
                     writer.newLine();
 
@@ -194,8 +191,7 @@ public class AppointmentManager {
     public void loadFromCSV(String filename) {
 
         //Get the formatting set up for the file
-        DateTimeFormatter dateFormat = DateTimeFormatter.ISO_LOCAL_DATE;
-        DateTimeFormatter timeFormat = DateTimeFormatter.ISO_LOCAL_DATE;
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
         File file = new File(filename);
         if (!file.exists()) return;
@@ -207,17 +203,15 @@ public class AppointmentManager {
             while ((line = reader.readLine()) != null) {
 
                 //If there somehow is a misalignment skip it
-                String[] parts = line.split(",", 4);
-                if (parts.length != 4) continue;
+                String[] parts = line.split(",", 3);
+                if (parts.length != 3) continue;
 
                 //Parse the split, then add the event to the correct date
-                LocalDate date = LocalDate.parse(parts[0], dateFormat);
-                String title = parts[1];
-                LocalTime start = LocalTime.parse(parts[2], timeFormat);
-                LocalTime end = LocalTime.parse(parts[2], timeFormat);
+                String title = parts[0];
+                LocalDateTime start = LocalDateTime.parse(parts[1], formatter);
+                LocalDateTime end = LocalDateTime.parse(parts[2], formatter);
 
-                NavigableSet<Event> eventsOfTheDay = eventsEachDay.computeIfAbsent(date, d -> new TreeSet<>());
-                eventsOfTheDay.add(new Event(title, start, end));
+                addEvent(title, start, end);
 
             }
 

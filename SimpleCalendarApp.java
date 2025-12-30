@@ -49,6 +49,7 @@ public class SimpleCalendarApp {
             System.out.println("\n4) List ALL events for ANY day:");
             System.out.println("\n5) Find the next available slot of a given size on any day:");
             System.out.println("\n6) Save and Exit");
+            System.out.println("==============================================================");
 
             String choice = scanner.nextLine().trim();
 
@@ -72,7 +73,7 @@ public class SimpleCalendarApp {
                     running = false;
                     break;
                 default:
-                    System.out.println("Invalid option, try again");;
+                    System.out.println("Invalid option. Try again.");;
             }
         }
 
@@ -175,16 +176,21 @@ public class SimpleCalendarApp {
             var events = manager.listADaysEvents(LocalDate.now());
 
             if (events.isEmpty()) {
+                    
                     System.out.println("No events today.");
+                
                 } else {
+
                     System.out.println("Here are today's events:");
                     for (Event event : events) {
                         System.out.println(" - " + event.getTitle()
                                             + " " + event.getStartTime()
                                             + "-" + event.getEndTime());
                     }
-                    return;
+
                 }
+
+            return;
 
         }
 
@@ -197,11 +203,14 @@ public class SimpleCalendarApp {
             String input = scanner.nextLine().trim();
 
             if (input.isEmpty()) {
+
                 System.out.println("Cancelling...");
-                return;                
+                return;      
+
             }
 
             try {
+
                 LocalDate date = LocalDate.parse(input, DateTimeFormatter.ISO_LOCAL_DATE);
                 var events = manager.listADaysEvents(date);
 
@@ -214,8 +223,11 @@ public class SimpleCalendarApp {
                                             + " " + event.getStartTime()
                                             + "-" + event.getEndTime());
                     }
-                    return;
+                    
                 }
+
+                return;
+                
             } catch (DateTimeParseException e) {
                 System.out.println("Invalid date format. Try again.");
             }
