@@ -13,15 +13,110 @@ import java.time.*;
 
 public class AppointmentManager {
 
+    /*
+     * This is a small helper object used for event validation
+     */
+    private static class TempEvent {
+        final LocalDate date;
+        final LocalTime start;
+        final LocalTime end;
+
+        TempEvent(LocalDate date, LocalTime start, LocalTime end) {
+            this.date = date;
+            this.start = start;
+            this.end = end;
+        }
+    
+    }
+
     private final Map<LocalDate, List<Event>> eventsEachDay;
 
     public AppointmentManager() {
         this.eventsEachDay = new HashMap<>();
     }
 
-    //TODO: Add events to the Calendar, will have the splitting logic
-    public void AddEvent() {
-        Event newEvent = new Event(null, null, null);
+    /*
+     * This fucntion is the main driver for adding events to the calendar.
+     * It utilizes various helper functions as well as the TempEvent object
+     */
+    public void addEvent(String title, LocalDateTime start, LocalDateTime end) {
+
+        //Error handling
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("Start must be before end");
+        }
+
+        //Do the splitting in a helper function
+        List<TempEvent> segments = buildSegments(start, end);
+
+        //Check if all the split events are legal to include
+        validateSegments(segments);
+
+        //TODO: Commit them all at once
+        for (TempEvent event : segments) {
+            
+        }
+    }
+
+    /*
+     * Helper fucntion to split an event across multiple days if needed
+     */
+    private List<TempEvent> buildSegments(LocalDateTime start, LocalDateTime end) {
+
+        List<TempEvent> result = new ArrayList<>();
+
+        //Logic for splitting the days
+        LocalDate currentDate = start.toLocalDate();
+        LocalDate lastDate = end.toLocalDate();
+
+        //Use NOT isAfter instead of isBefore to include the end of the event
+        while (!currentDate.isAfter(lastDate)) {
+
+            LocalTime currentStart;
+            LocalTime currentEnd;
+
+            //Check to see if the current day matches with the start
+            //If so set it to the proper time
+            //Otherwise set it to midnight
+            if (currentDate.isEqual(start.toLocalDate())) {
+                currentStart = start.toLocalTime();
+            } else {
+                currentStart = LocalTime.MIDNIGHT;
+            }
+
+            //Check to see if the current day matches with the end
+            //If so set it to the proper time
+            //Otherwise set it to 23:59:99
+            if (currentDate.isEqual(end.toLocalDate())) {
+                currentEnd = end.toLocalTime();
+            } else {
+                currentEnd = LocalTime.MAX;
+            }
+
+            //Insert the new temp event into the temp array and increment the day
+            result.add(new TempEvent(currentDate, currentStart, currentEnd));
+
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return result;
+
+    }
+
+    /*
+     * Another helper function, this time to validate all the events
+     * on the arraylist to see if they don't overlap with current events
+     */
+    private void validateSegments(List<TempEvent> segments) {
+
+        for (TempEvent event : segments) {
+            List<Event> eventsOfTheDay = listADaysEvents(event.date);
+
+            Event probe = new Event("probe", event.start, event.end);
+
+            //TODO: Check events of that day and see if probe fits, if not throw error
+        }
+
     }
 
     /*
@@ -30,7 +125,8 @@ public class AppointmentManager {
      * 3) List all events for any specified day
      */
     public List<Event> listADaysEvents(LocalDate aDay) {
-        return eventsEachDay.get(aDay);
+        //Using default of empty set to avoid null
+        return eventsEachDay.getOrDefault(aDay, List.of());
     }
 
     /*
