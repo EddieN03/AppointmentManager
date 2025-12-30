@@ -17,15 +17,15 @@ public class Event {
     private final LocalTime endTime;
 
     //Constructor
-    public Event(String title, LocalTime starTime, LocalTime endTime) {
+    public Event(String title, LocalTime startTime, LocalTime endTime) {
 
         //Error handling
-        if (starTime.isAfter(endTime)) {
+        if (startTime.isAfter(endTime)) {
             throw new IllegalArgumentException("The starting time must be before the ending time.");
         }
 
         this.title = title;
-        this.startTime = starTime;
+        this.startTime = startTime;
         this.endTime = endTime;
     }
 
@@ -40,6 +40,11 @@ public class Event {
 
     public LocalTime getEndTime() {
         return endTime;
+    }
+
+    //Actual helper fucntion to determine if a collision exists between events
+    public boolean overlaps(Event other) {
+        return (this.startTime.isBefore(other.endTime) && this.endTime.isAfter(other.startTime));
     }
     
 }

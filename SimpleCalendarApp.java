@@ -9,9 +9,18 @@
  * 
  * Current Issues:
  * ==============
- * 1) What if a user wants to make event that spans multiple days?
- *  -> Change LocalTime to LocalDateTime in Event.java?
- *  -> Split multi day events into different events at midnight in AppointmentManager.java?
+ * - Validatation of Events
+ * - Inserting events into the Calendar
+ * - Sorting events into chronological order rather than whatever gets added first
+ * - Actually setting up this main file
+ * - Presentation
+ * 
+ * Stretch Goals:
+ * ==============
+ * 1) Test cases
+ * 2) Persistance across opening and closing the program
+ * 3) GUI
+ *
  */
 
 public class SimpleCalendarApp {
