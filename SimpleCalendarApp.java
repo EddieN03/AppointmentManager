@@ -60,6 +60,7 @@ public class SimpleCalendarApp {
                     checkDayCLI(manager, scanner, true);
                     break;
                 case "3":
+                    checkRemainingCLI(manager);
                     break;
                 case "4":
                     checkDayCLI(manager, scanner, false);
@@ -211,6 +212,20 @@ public class SimpleCalendarApp {
             }
         }
 
+    }
+
+    private static void checkRemainingCLI(AppointmentManager manager) {
+        NavigableSet<Event> remaining = manager.listTodaysRemainingEvents();
+        if (remaining.isEmpty()) {
+            System.out.println("There are no remaining events for today.");
+        } else {
+            System.out.println("Here are today's remaining events:");
+                    for (Event event : remaining) {
+                        System.out.println(" - " + event.getTitle()
+                                            + " " + event.getStartTime()
+                                            + "-" + event.getEndTime());
+                    }
+        }
     }
     
 
