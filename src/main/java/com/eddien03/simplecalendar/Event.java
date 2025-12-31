@@ -1,4 +1,4 @@
-package src;
+package com.eddien03.simplecalendar;
 /*
  * Structure:
  * =========

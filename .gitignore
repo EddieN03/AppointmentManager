@@ -1,2 +1,7 @@
-events.csv
+target/
+lib/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
 events.csv

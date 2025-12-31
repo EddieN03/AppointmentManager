@@ -1,4 +1,5 @@
-package src;
+package com.eddien03.simplecalendar;
+
 /*
  * Simple Calendar Application
  * ===========================
@@ -10,13 +11,11 @@ package src;
  * 
  * Current Issues:
  * ==============
- * - Actually setting up this main file
  * - Presentation
  * 
  * Stretch Goals:
  * ==============
- * 1) Test cases (Semi Done)
- * 2) GUI
+ * 1) GUI
  *
  */
 

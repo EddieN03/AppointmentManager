@@ -1,10 +1,8 @@
-package test;
+package com.eddien03.simplecalendar;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.NavigableSet;
-
-import src.AppointmentManager;
-import src.Event;
 
 /*
  * This is the simple test of the calendar that was in the main file previously
