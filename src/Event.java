@@ -1,3 +1,4 @@
+package src;
 /*
  * Structure:
  * =========
@@ -42,7 +43,7 @@ public class Event implements Comparable<Event>{
         return endTime;
     }
 
-    //Actual helper fucntion to determine if a collision exists between events
+    //Actual helper function to determine if a collision exists between events
     public boolean overlaps(Event other) {
         return (this.startTime.isBefore(other.endTime) && this.endTime.isAfter(other.startTime));
     }

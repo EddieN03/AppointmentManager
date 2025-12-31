@@ -1,3 +1,4 @@
+package src;
 /*
  * Structure:
  * =========
@@ -231,7 +232,7 @@ public class AppointmentManager {
     //Helper Functions
 
     /*
-     * Helper fucntion to split an event across multiple days if needed
+     * Helper function to split an event across multiple days if needed
      */
     private List<TempEvent> buildSegments(LocalDateTime start, LocalDateTime end) {
 
